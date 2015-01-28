@@ -2,8 +2,8 @@ package com.bnj.bnj.accessory.agent;
 
 import android.content.Intent;
 import android.hardware.usb.UsbManager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +22,7 @@ public class MainActivity extends ActionBarActivity {
             Intent intent = new Intent(this, AgentService.class);
             intent.putExtra(UsbManager.EXTRA_ACCESSORY, getIntent().getParcelableExtra(UsbManager.EXTRA_ACCESSORY));
             startService(intent);
+            finish();
         }
     }
 
