@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
+import android.os.Binder;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -50,6 +51,7 @@ public class AgentService extends Service {
             Log.i(TAG, "BNJ Accessory is detached");
             if (workerThread != null) {
                 workerThread.interrupt();
+                workerThread = null;
             }
             if (fileDescriptor != null) {
                 try {
@@ -57,10 +59,13 @@ public class AgentService extends Service {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                fileDescriptor = null;
             }
             stopSelf();
         }
     };
+    private IBinder localBinder = new LocalBinder();
+    private UsbAccessory accessory;
 
     public AgentService() {
     }
@@ -79,13 +84,13 @@ public class AgentService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+        accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
         if (accessory != null) {
             Log.i(TAG, "BNJ Accessory is attached");
-            if(workerThread!=null){
+            if (workerThread != null) {
                 workerThread.interrupt();
             }
-            if(fileDescriptor!=null){
+            if (fileDescriptor != null) {
                 try {
                     fileDescriptor.close();
                 } catch (IOException e) {
@@ -104,7 +109,16 @@ public class AgentService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
+        return localBinder;
+    }
+
+    public UsbAccessory getAccessory() {
+        return accessory;
+    }
+
+    public class LocalBinder extends Binder {
+        public AgentService getService() {
+            return AgentService.this;
+        }
     }
 }
