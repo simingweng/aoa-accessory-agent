@@ -13,16 +13,22 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class AgentService extends Service {
 
     private static final String TAG = AgentService.class.getName();
+    private ParcelFileDescriptor fileDescriptor;
+    private FileOutputStream fileOutputStream;
+    private FileInputStream fileInputStream;
     private Runnable readTask = new Runnable() {
 
         @Override
         public void run() {
-            FileInputStream fileInputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
             byte[] buffer = new byte[16384];
             int numOfBytes = 0;
             Log.i(TAG, "start reading from accessory");
@@ -35,26 +41,24 @@ public class AgentService extends Service {
                 }
             }
             Log.i(TAG, "exit from read task");
-            try {
-                fileInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     };
-    private ParcelFileDescriptor fileDescriptor;
     private Thread workerThread;
+    private ScheduledExecutorService dummyTxService = Executors.newSingleThreadScheduledExecutor();
     private BroadcastReceiver usbAccessoryDetachReceiver = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i(TAG, "BNJ Accessory is detached");
+            dummyTxService.shutdownNow();
             if (workerThread != null) {
                 workerThread.interrupt();
                 workerThread = null;
             }
             if (fileDescriptor != null) {
                 try {
+                    fileInputStream.close();
+                    fileOutputStream.close();
                     fileDescriptor.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -100,8 +104,21 @@ public class AgentService extends Service {
             UsbManager usbManager = (UsbManager) getSystemService(USB_SERVICE);
             fileDescriptor = usbManager.openAccessory(accessory);
             if (fileDescriptor != null) {
+                fileOutputStream = new FileOutputStream(fileDescriptor.getFileDescriptor());
+                fileInputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
                 workerThread = new Thread(readTask);
                 workerThread.start();
+                dummyTxService.scheduleAtFixedRate(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Log.i(TAG, "send heart beat to accessory");
+                            fileOutputStream.write("heart beat from device".getBytes());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, 0, 3, TimeUnit.SECONDS);
             }
         }
         return super.onStartCommand(intent, flags, startId);
