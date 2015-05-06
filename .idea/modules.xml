@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/BNJAccessoryAgent.iml" filepath="$PROJECT_DIR$/BNJAccessoryAgent.iml" />
       <module fileurl="file://$PROJECT_DIR$/agent-service/agent-service.iml" filepath="$PROJECT_DIR$/agent-service/agent-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/aoa-accessory-agent.iml" filepath="$PROJECT_DIR$/aoa-accessory-agent.iml" />
     </modules>
   </component>
 </project>

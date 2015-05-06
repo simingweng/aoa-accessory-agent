@@ -112,7 +112,6 @@ public class AgentService extends Service {
                     @Override
                     public void run() {
                         try {
-                            Log.i(TAG, "send heart beat to accessory");
                             fileOutputStream.write("heart beat from device".getBytes());
                         } catch (IOException e) {
                             e.printStackTrace();
